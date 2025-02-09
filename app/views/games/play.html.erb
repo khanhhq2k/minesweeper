@@ -1,0 +1,61 @@
+<div class="container-sm">
+  <h1 class="display-5 text-center mb-4">Minesweeper</h1>
+  <h4 class="text-center mb-4"><%= @game.name %> by <%= @game.email %></h4>
+  <div class="card mb-4 mx-auto" style="max-width: 500px;">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <small class="text-muted">Right-click to 🚩</small>
+        </div>
+        <div>
+          <p class="mb-0">
+            <strong>Mines:</strong> <span class="fw-bold"><%= @game.mines %></span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="text-center"> 
+    <% if @game.game_over %>
+      <div class="alert <%= @game.victory ? 'alert-success' : 'alert-danger' %> d-inline-block">
+        <%= @game.victory ? 'You Won!' : 'Game Over!' %>
+      </div>
+    <% end %>
+  </div>
+  <div class="text-center mb-4">
+    <div class="game-board d-inline-block" data-controller="minesweeper">
+      <% @game.height.times do |row| %>
+        <div class="board-row">
+          <% @game.width.times do |col| %>
+            <button type="button"
+                    class="board-cell <%= @game.revealed[row][col] ? 'revealed' : '' %>"
+                    data-row="<%= row %>"
+                    data-col="<%= col %>"
+                    data-action="click->minesweeper#handleClick contextmenu->minesweeper#handleRightClick">
+              <% if @game.revealed[row][col] %>
+                <% case @game.board[row][col] %>
+                <% when -1 %>
+                  <span>💣</span>
+                <% when 0 %>
+                  <span>&nbsp;</span>
+                <% else %>
+                  <span class="number-<%= @game.board[row][col] %>">
+                    <%= @game.board[row][col] %>
+                  </span>
+                <% end %>
+              <% elsif @game.flags[row][col] %>
+                <span>🚩</span>
+              <% else %>
+                <span>&nbsp;</span>
+              <% end %>
+            </button>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="text-center">
+    <%= link_to "Back to New Game", root_path, class: "btn btn-outline-secondary mb-3" %>
+  </div>
+</div>

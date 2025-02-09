@@ -1,0 +1,17 @@
+<div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+  <div>
+    <%= link_to game.name, play_game_path(game), 
+                class: "" %>
+    <p class="mb-1 text-muted small">
+      <%= "#{game.width}x#{game.height} with #{game.mines} mines" %> - 
+      <span class="badge <%= game.game_over ? 'bg-secondary' : 'bg-primary' %>">
+        <%= game.game_over ? "Completed" : "In Progress" %>
+      </span>
+    </p>
+    <p class="mb-0 text-muted smaller">
+      <small>
+        Created by <%= game.email %> on <%= game.created_at.strftime("%B %d, %Y at %I:%M %p") %>
+      </small>
+    </p>
+  </div>
+</div> 

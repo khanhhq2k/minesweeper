@@ -7,7 +7,13 @@ class Game < ApplicationRecord
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP }
   validate :mines_less_than_board_size
   
+  after_find :ensure_arrays
+  
   def self.create_new(email:, name:, width: 8, height: 8, mines: 10)
+    width = width.to_i
+    height = height.to_i
+    mines = mines.to_i
+    
     game = new(
       email: email,
       name: name,
@@ -23,6 +29,19 @@ class Game < ApplicationRecord
     game.save!
     game
   end
+
+  def won?
+    return false if game_over && !victory
+    unrevealed_safe_cells = 0
+    height.times do |row|
+      width.times do |col|
+        if !revealed[row][col] && board[row][col] != -1
+          unrevealed_safe_cells += 1
+        end
+      end
+    end
+    unrevealed_safe_cells == 0
+  end
   
   def generate_board
     empty_board = Array.new(height) { Array.new(width, 0) }
@@ -35,7 +54,7 @@ class Game < ApplicationRecord
         col = rand(width)
         unless mine_positions.include?([row, col])
           mine_positions << [row, col]
-          empty_board[row][col] = -1 # -1 represents a mine
+          empty_board[row][col] = -1 # -1 is a mine
           break
         end
       end
@@ -68,6 +87,9 @@ class Game < ApplicationRecord
   def reveal_cell(row, col)
     return if revealed[row][col] || flags[row][col]
     
+    @last_revealed_row = row
+    @last_revealed_col = col
+    
     revealed_board = revealed
     revealed_board[row][col] = true
     self.revealed = revealed_board
@@ -84,7 +106,12 @@ class Game < ApplicationRecord
       end
     end
     
-    save!
+    if won?
+      self.game_over = true
+      save!
+    else
+      save!
+    end
   end
   
   def toggle_flag(row, col)
@@ -96,6 +123,23 @@ class Game < ApplicationRecord
     save!
   end
 
+  def victory
+    return false if game_over && board[last_revealed_row][last_revealed_col] == -1
+    
+    # Check if all non-mine cells are revealed
+    height.times do |row|
+      width.times do |col|
+        # If there's an unrevealed cell that's not a mine, game isn't won yet
+        if !revealed[row][col] && board[row][col] != -1
+          return false
+        end
+      end
+    end
+    
+    # All non-mine cells are revealed
+    true
+  end
+
   private
 
   def mines_less_than_board_size
@@ -105,5 +149,19 @@ class Game < ApplicationRecord
         errors.add(:mines, "must be less than #{max_mines}")
       end
     end
+  end
+
+  def ensure_arrays
+    self.board = board.is_a?(Array) ? board : JSON.parse(board)
+    self.revealed = revealed.is_a?(Array) ? revealed : JSON.parse(revealed)
+    self.flags = flags.is_a?(Array) ? flags : JSON.parse(flags)
+  end
+
+  def last_revealed_row
+    @last_revealed_row || 0
+  end
+
+  def last_revealed_col
+    @last_revealed_col || 0
   end
 end
